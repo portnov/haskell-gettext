@@ -1,7 +1,18 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Data.Gmo where
+module Data.Gettext
+  ( -- * Data structures
+   GmoFile (..),
+   GmoData,
+   -- * Loading and using translations
+   loadGmoData,
+   lookup,
+   -- * Utilities for custom parsers implementation
+   parseGmo,
+   unpackGmoFile
+  ) where
 
+import Prelude hiding (lookup)
 import Control.Monad
 import Data.Binary
 import Data.Binary.Get
@@ -14,25 +25,27 @@ import qualified Data.Trie as Trie
 import Data.Word
 import Text.Printf
 
-import Debug.Trace
+-- import Debug.Trace
 
+-- | This structure describes the binary structure of Gettext @.mo/.gmo@ file.
 data GmoFile = GmoFile {
-  fMagic :: Word32,
-  fRevision :: Word32,
-  fSize :: Word32,
-  fOriginalOffset :: Word32,
-  fTranslationOffset :: Word32,
-  fHashtableSize :: Word32,
-  fHashtableOffset :: Word32,
-  fOriginals :: [(Word32, Word32)],
-  fTranslations :: [(Word32, Word32)],
-  fData :: L.ByteString
+    fMagic :: Word32                       -- ^ Magic number (must be @0x950412de@ or @0xde120495@)
+  , fRevision :: Word32                    -- ^ File revision
+  , fSize :: Word32                        -- ^ Number of text pairs in the file
+  , fOriginalOffset :: Word32              -- ^ Offset of original strings
+  , fTranslationOffset :: Word32           -- ^ Offset of translations
+  , fHashtableSize :: Word32               -- ^ Size of hash table
+  , fHashtableOffset :: Word32             -- ^ Offset of hash table
+  , fOriginals :: [(Word32, Word32)]       -- ^ Original strings - sizes and offsets
+  , fTranslations :: [(Word32, Word32)]    -- ^ Translations - sizes and offsets
+  , fData :: L.ByteString                  -- ^ All file data - used to access strings by offsets
   }
   deriving (Eq)
 
 instance Show GmoFile where
   show f = printf "<GMO file size=%d>" (fSize f)
 
+-- | This structure describes data in Gettext's @.mo/.gmo@ file in ready-to-use format.
 data GmoData = GmoData {
   gmoSize :: Word32,
   gmoData :: Trie.Trie [T.Text] }
@@ -41,6 +54,7 @@ data GmoData = GmoData {
 instance Show GmoData where
   show gmo = printf "<GMO data size=%d>" (gmoSize gmo)
 
+-- | Prepare the data parsed from file for lookups.
 unpackGmoFile :: GmoFile -> GmoData
 unpackGmoFile (GmoFile {..}) = GmoData fSize trie
   where
@@ -57,6 +71,18 @@ unpackGmoFile (GmoFile {..}) = GmoData fSize trie
 
     trie = Trie.fromList $ zip originals translations
 
+-- | Load gettext file
+loadGmoData :: FilePath -> IO GmoData
+loadGmoData path = do
+  content <- L.readFile path
+  let gmoFile = (runGet parseGmo content) {fData = content}
+  return $ unpackGmoFile gmoFile
+
+-- | Look up for string translation
+lookup :: B.ByteString -> GmoData -> Maybe [T.Text]
+lookup key gmo = Trie.lookup key (gmoData gmo)
+
+-- | Data.Binary parser for GmoFile structure
 parseGmo :: Get GmoFile
 parseGmo = do
   magic <- getWord32host
