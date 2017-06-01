@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, OverloadedStrings #-}
 
 module Data.Gettext
   ( -- * Data structures
@@ -8,6 +8,8 @@ module Data.Gettext
    loadCatalog,
    lookup,
    assocs,
+   getHeaders,
+   getPluralExpression,
    -- * Utilities for custom parsers implementation
    parseGmo,
    unpackGmoFile
@@ -15,6 +17,7 @@ module Data.Gettext
 
 import Prelude hiding (lookup)
 import Control.Monad
+import Data.Either
 import Data.Binary
 import Data.Binary.Get
 import qualified Data.ByteString as B
@@ -25,6 +28,9 @@ import qualified Data.Text.Lazy.Encoding as TLE
 import qualified Data.Trie as Trie
 import Data.Word
 import Text.Printf
+
+import Data.Gettext.Plural
+import Data.Gettext.Parsers
 
 -- import Debug.Trace
 
@@ -87,6 +93,18 @@ lookup key gmo = Trie.lookup key (gmoData gmo)
 -- | Get all translation pairs
 assocs :: Catalog -> [(B.ByteString, [T.Text])]
 assocs = Trie.toList . gmoData
+
+getHeaders :: Catalog -> Maybe Headers
+getHeaders gmo =
+  case lookup "" gmo of
+    Nothing -> Nothing
+    Just texts -> either error Just $ parseHeaders (head texts)
+
+getPluralExpression :: Catalog -> Maybe (Int, Expr)
+getPluralExpression gmo =
+  case getHeaders gmo of
+    Nothing -> Nothing
+    Just headers -> either error Just $ parsePlural headers
 
 -- | Data.Binary parser for GmoFile structure
 parseGmo :: Get GmoFile
