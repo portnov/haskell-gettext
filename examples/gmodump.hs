@@ -11,9 +11,9 @@ import System.Environment
 main = do
   [file] <- getArgs
   catalog <- loadCatalog file
-  case getPluralExpression catalog of
+  case getPluralDefinition catalog of
     Nothing -> putStrLn "No plural forms selection expression provided."
-    Just expr -> putStrLn $ "Plural forms selection: " ++ show expr
+    Just (_,expr) -> putStrLn $ "Plural forms selection: " ++ show expr
   forM_ (assocs catalog) $ \(orig,trans) -> do
     putStr "Original: "
     B8.putStrLn orig

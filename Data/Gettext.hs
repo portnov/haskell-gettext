@@ -7,9 +7,12 @@ module Data.Gettext
    -- * Loading and using translations
    loadCatalog,
    lookup,
+   gettext, ngettext,
    assocs,
+   -- * Utilities for plural forms
    getHeaders,
-   getPluralExpression,
+   getPluralDefinition,
+   choosePluralForm,
    -- * Utilities for custom parsers implementation
    parseGmo,
    unpackGmoFile
@@ -100,11 +103,30 @@ getHeaders gmo =
     Nothing -> Nothing
     Just texts -> either error Just $ parseHeaders (head texts)
 
-getPluralExpression :: Catalog -> Maybe (Int, Expr)
-getPluralExpression gmo =
+getPluralDefinition :: Catalog -> Maybe (Int, Expr)
+getPluralDefinition gmo =
   case getHeaders gmo of
     Nothing -> Nothing
     Just headers -> either error Just $ parsePlural headers
+
+gettext :: Catalog -> B.ByteString -> T.Text
+gettext gmo key =
+  case lookup key gmo of
+    Nothing -> TLE.decodeUtf8 $ L.fromStrict key
+    Just texts -> head texts
+
+
+ngettext :: Catalog -> Int -> B.ByteString -> T.Text
+ngettext gmo n key =
+  case lookup key gmo of
+    Nothing -> TLE.decodeUtf8 $ L.fromStrict key
+    Just texts -> texts !! choosePluralForm gmo n
+
+choosePluralForm :: Catalog -> Int -> Int
+choosePluralForm gmo n =
+  case getPluralDefinition gmo of
+    Nothing -> if n == 1 then 0 else 1 -- from GNU gettext implementation, known as 'germanic plural form'
+    Just (_, expr) -> eval expr n
 
 -- | Data.Binary parser for GmoFile structure
 parseGmo :: Get GmoFile
