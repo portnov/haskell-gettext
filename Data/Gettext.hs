@@ -3,7 +3,7 @@
 module Data.Gettext
   ( -- * Data structures
    GmoFile (..),
-   GmoData,
+   Catalog,
    -- * Loading and using translations
    loadGmoData,
    lookup,
@@ -43,20 +43,20 @@ data GmoFile = GmoFile {
   deriving (Eq)
 
 instance Show GmoFile where
-  show f = printf "<GMO file size=%d>" (fSize f)
+  show f = printf "<GetText file size=%d>" (fSize f)
 
 -- | This structure describes data in Gettext's @.mo/.gmo@ file in ready-to-use format.
-data GmoData = GmoData {
+data Catalog = Catalog {
   gmoSize :: Word32,
   gmoData :: Trie.Trie [T.Text] }
   deriving (Eq)
 
-instance Show GmoData where
-  show gmo = printf "<GMO data size=%d>" (gmoSize gmo)
+instance Show Catalog where
+  show gmo = printf "<GetText data size=%d>" (gmoSize gmo)
 
 -- | Prepare the data parsed from file for lookups.
-unpackGmoFile :: GmoFile -> GmoData
-unpackGmoFile (GmoFile {..}) = GmoData fSize trie
+unpackGmoFile :: GmoFile -> Catalog
+unpackGmoFile (GmoFile {..}) = Catalog fSize trie
   where
     getOrig (len,offs) = L.take (fromIntegral len) $ L.drop (fromIntegral offs) fData
     
@@ -72,14 +72,14 @@ unpackGmoFile (GmoFile {..}) = GmoData fSize trie
     trie = Trie.fromList $ zip originals translations
 
 -- | Load gettext file
-loadGmoData :: FilePath -> IO GmoData
+loadGmoData :: FilePath -> IO Catalog
 loadGmoData path = do
   content <- L.readFile path
   let gmoFile = (runGet parseGmo content) {fData = content}
   return $ unpackGmoFile gmoFile
 
 -- | Look up for string translation
-lookup :: B.ByteString -> GmoData -> Maybe [T.Text]
+lookup :: B.ByteString -> Catalog -> Maybe [T.Text]
 lookup key gmo = Trie.lookup key (gmoData gmo)
 
 -- | Data.Binary parser for GmoFile structure
