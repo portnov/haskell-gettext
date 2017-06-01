@@ -5,8 +5,9 @@ module Data.Gettext
    GmoFile (..),
    Catalog,
    -- * Loading and using translations
-   loadGmoData,
+   loadCatalog,
    lookup,
+   assocs,
    -- * Utilities for custom parsers implementation
    parseGmo,
    unpackGmoFile
@@ -72,15 +73,20 @@ unpackGmoFile (GmoFile {..}) = Catalog fSize trie
     trie = Trie.fromList $ zip originals translations
 
 -- | Load gettext file
-loadGmoData :: FilePath -> IO Catalog
-loadGmoData path = do
+loadCatalog :: FilePath -> IO Catalog
+loadCatalog path = do
   content <- L.readFile path
   let gmoFile = (runGet parseGmo content) {fData = content}
   return $ unpackGmoFile gmoFile
 
+
 -- | Look up for string translation
 lookup :: B.ByteString -> Catalog -> Maybe [T.Text]
 lookup key gmo = Trie.lookup key (gmoData gmo)
+
+-- | Get all translation pairs
+assocs :: Catalog -> [(B.ByteString, [T.Text])]
+assocs = Trie.toList . gmoData
 
 -- | Data.Binary parser for GmoFile structure
 parseGmo :: Get GmoFile
