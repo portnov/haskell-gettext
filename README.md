@@ -19,7 +19,7 @@ This package has the following advantages comparing to hgettext:
   C code;
 * It does not depend on additional C libraries in runtime;
 * And probably the most important: this library does not use global process-level
-  variables to store "current catalog", the catalog should be specified for each
-  call of translation function. So it can be much simpler to use this library for
-  example in web applications.
+  variables to store "current catalog" (current locale), the catalog should be
+  specified for each call of translation function. So it can be much simpler to
+  use this library for example in web applications.
 
