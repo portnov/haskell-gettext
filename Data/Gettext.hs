@@ -7,7 +7,7 @@ module Data.Gettext
    -- * Loading and using translations
    loadCatalog,
    lookup,
-   gettext, ngettext,
+   gettext, ngettext, ngettext',
    assocs,
    -- * Utilities for plural forms
    getHeaders,
@@ -123,8 +123,11 @@ gettext gmo key =
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
     Just texts -> head texts
 
-ngettext :: Catalog -> Int -> B.ByteString -> T.Text
-ngettext gmo n key =
+ngettext :: Catalog -> Int -> B.ByteString -> B.ByteString -> T.Text
+ngettext gmo n single plural = ngettext' gmo n $ single `B.append` "\0" `B.append` plural
+
+ngettext' :: Catalog -> Int -> B.ByteString -> T.Text
+ngettext' gmo n key =
   case lookup key gmo of
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
     Just texts ->
