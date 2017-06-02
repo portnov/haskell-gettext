@@ -2,5 +2,11 @@
 *.o
 *.swp
 dist/
-.cabal-sandbox
+.cabal-sandbox/
+.stack-work/
 cabal.sandbox.config
+examples/gmodump
+examples/gmotest
+examples/po/*.mo
+out
+*.log
