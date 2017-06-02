@@ -169,34 +169,36 @@ choosePluralForm' trie n =
 parseGmo :: Get GmoFile
 parseGmo = do
   magic <- getWord32host
-  if magic /= 0x950412de && magic /= 0xde120495
-    then fail "Invalid magic number"
-    else do
-         revision <- getWord32host
-         size <- getWord32host
-         origOffs <- getWord32host
-         transOffs <- getWord32host
-         hashSz <- getWord32host
-         hashOffs <- getWord32host
-         origs <- replicateM (fromIntegral size) getPair
-         trans <- replicateM (fromIntegral size) getPair
-         return $ GmoFile {
-                    fMagic = magic,
-                    fRevision = revision,
-                    fSize = size,
-                    fOriginalOffset = origOffs,
-                    fTranslationOffset = transOffs,
-                    fHashtableSize = hashSz,
-                    fHashtableOffset = hashOffs,
-                    fOriginals = origs,
-                    fTranslations = trans,
-                    fData = undefined }
+  getWord32 <- case magic of
+                 0x950412de -> return getWord32le
+                 0xde120495 -> return getWord32be
+                 _ -> fail "Invalid magic number"
+  
+  let getPair :: Get (Word32, Word32)
+      getPair = do
+        x <- getWord32
+        y <- getWord32
+        return (x,y)
 
-getPair :: Get (Word32, Word32)
-getPair = do
-  x <- getWord32host
-  y <- getWord32host
-  return (x,y)
+  revision <- getWord32
+  size <- getWord32
+  origOffs <- getWord32
+  transOffs <- getWord32
+  hashSz <- getWord32
+  hashOffs <- getWord32
+  origs <- replicateM (fromIntegral size) getPair
+  trans <- replicateM (fromIntegral size) getPair
+  return $ GmoFile {
+              fMagic = magic,
+              fRevision = revision,
+              fSize = size,
+              fOriginalOffset = origOffs,
+              fTranslationOffset = transOffs,
+              fHashtableSize = hashSz,
+              fHashtableOffset = hashOffs,
+              fOriginals = origs,
+              fTranslations = trans,
+              fData = undefined }
 
 withGmoFile :: FilePath -> (GmoFile -> IO a) -> IO a
 withGmoFile path go = do
