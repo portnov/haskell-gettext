@@ -15,7 +15,7 @@ main = do
   [file, ns] <- getArgs
   let n = read ns
   catalog <- loadCatalog file
-  let localizedTemplate = ngettext catalog n "There is %d file" "There are %d files"
+  let localizedTemplate = ngettext catalog "There is %d file" "There are %d files" n
   TLIO.putStrLn localizedTemplate
   printf (T.unpack localizedTemplate) n
 
