@@ -1,5 +1,30 @@
 {-# LANGUAGE RecordWildCards, OverloadedStrings #-}
-
+-- | This is the main module of @haskell-gettext@ package.
+-- For most cases, it is enough to import only this module. 
+-- Other modules of the package might be useful for other libraries
+-- working with gettext's files.
+--
+-- Simple example of usage of this module is:
+--
+-- @
+-- {-\# LANGUAGE OverloadedStrings #\-}
+-- module Main where
+--
+-- import qualified Data.Text.Lazy as T
+-- import qualified Text.Lazy.IO as TLIO
+-- import Text.Printf
+--
+-- import Data.Gettext
+--
+-- main :: IO ()
+-- main = do
+--   catalog <- loadCatalog "locale\/ru\/messages.mo"
+--   TLIO.putStrLn $ gettext catalog "Simple translated message"
+--   let n = 78
+--   let template = ngettext catalog "There is %d file" "There are %d files" n
+--   printf (T.unpack template) n
+-- @
+--
 module Data.Gettext
   ( -- * Data structures
    Catalog,
