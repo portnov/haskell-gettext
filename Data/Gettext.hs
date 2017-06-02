@@ -58,17 +58,19 @@ instance Show GmoFile where
 -- | This structure describes data in Gettext's @.mo/.gmo@ file in ready-to-use format.
 data Catalog = Catalog {
   gmoSize :: Word32,
+  gmoChoosePlural :: Int -> Int,
   gmoData :: Trie.Trie [T.Text] }
-  deriving (Eq)
 
 instance Show Catalog where
   show gmo = printf "<GetText data size=%d>" (gmoSize gmo)
 
 -- | Prepare the data parsed from file for lookups.
 unpackGmoFile :: GmoFile -> Catalog
-unpackGmoFile (GmoFile {..}) = Catalog fSize trie
+unpackGmoFile (GmoFile {..}) = Catalog fSize choose trie
   where
     getOrig (len,offs) = L.take (fromIntegral len) $ L.drop (fromIntegral offs) fData
+
+    choose = choosePluralForm' trie
     
     getTrans (len,offs) =
       let bstr = getOrig (len,offs)
@@ -98,14 +100,20 @@ assocs :: Catalog -> [(B.ByteString, [T.Text])]
 assocs = Trie.toList . gmoData
 
 getHeaders :: Catalog -> Maybe Headers
-getHeaders gmo =
-  case lookup "" gmo of
+getHeaders gmo = getHeaders' (gmoData gmo)
+
+getHeaders' :: Trie.Trie [T.Text] -> Maybe Headers
+getHeaders' trie =
+  case Trie.lookup "" trie of
     Nothing -> Nothing
     Just texts -> either error Just $ parseHeaders (head texts)
 
 getPluralDefinition :: Catalog -> Maybe (Int, Expr)
-getPluralDefinition gmo =
-  case getHeaders gmo of
+getPluralDefinition gmo = getPluralDefinition' (gmoData gmo)
+
+getPluralDefinition' :: Trie.Trie [T.Text] -> Maybe (Int, Expr)
+getPluralDefinition' trie =
+  case getHeaders' trie of
     Nothing -> Nothing
     Just headers -> either error Just $ parsePlural headers
 
@@ -115,7 +123,6 @@ gettext gmo key =
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
     Just texts -> head texts
 
-
 ngettext :: Catalog -> Int -> B.ByteString -> T.Text
 ngettext gmo n key =
   case lookup key gmo of
@@ -123,8 +130,11 @@ ngettext gmo n key =
     Just texts -> texts !! choosePluralForm gmo n
 
 choosePluralForm :: Catalog -> Int -> Int
-choosePluralForm gmo n =
-  case getPluralDefinition gmo of
+choosePluralForm gmo = gmoChoosePlural gmo
+
+choosePluralForm' :: Trie.Trie [T.Text] -> Int -> Int
+choosePluralForm' trie n =
+  case getPluralDefinition' trie of
     Nothing -> if n == 1 then 0 else 1 -- from GNU gettext implementation, known as 'germanic plural form'
     Just (_, expr) -> eval expr n
 
