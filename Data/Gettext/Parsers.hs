@@ -14,7 +14,6 @@ module Data.Gettext.Parsers
 
 import Control.Monad
 import Control.Monad.Identity
-import Data.Either
 import qualified Data.Text.Lazy as T
 import Text.Parsec
 import Text.Parsec.Text.Lazy

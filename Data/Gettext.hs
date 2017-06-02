@@ -2,7 +2,6 @@
 
 module Data.Gettext
   ( -- * Data structures
-   GmoFile (..),
    Catalog,
    -- * Loading and using translations
    loadCatalog,
@@ -21,41 +20,18 @@ module Data.Gettext
   ) where
 
 import Prelude hiding (lookup)
-import Control.Monad
-import Data.Either
 import Data.Binary
 import Data.Binary.Get
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Text.Lazy as T
-import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy.Encoding as TLE
 import qualified Data.Trie as Trie
-import Data.Word
 import Text.Printf
 
+import Data.Gettext.GmoFile
 import Data.Gettext.Plural
 import Data.Gettext.Parsers
-
--- import Debug.Trace
-
--- | This structure describes the binary structure of Gettext @.mo/.gmo@ file.
-data GmoFile = GmoFile {
-    fMagic :: Word32                       -- ^ Magic number (must be @0x950412de@ or @0xde120495@)
-  , fRevision :: Word32                    -- ^ File revision
-  , fSize :: Word32                        -- ^ Number of text pairs in the file
-  , fOriginalOffset :: Word32              -- ^ Offset of original strings
-  , fTranslationOffset :: Word32           -- ^ Offset of translations
-  , fHashtableSize :: Word32               -- ^ Size of hash table
-  , fHashtableOffset :: Word32             -- ^ Offset of hash table
-  , fOriginals :: [(Word32, Word32)]       -- ^ Original strings - sizes and offsets
-  , fTranslations :: [(Word32, Word32)]    -- ^ Translations - sizes and offsets
-  , fData :: L.ByteString                  -- ^ All file data - used to access strings by offsets
-  }
-  deriving (Eq)
-
-instance Show GmoFile where
-  show f = printf "<GetText file size=%d>" (fSize f)
 
 -- | This structure describes data in Gettext's @.mo/.gmo@ file in ready-to-use format.
 data Catalog = Catalog {
@@ -66,32 +42,12 @@ data Catalog = Catalog {
 instance Show Catalog where
   show gmo = printf "<GetText data size=%d>" (gmoSize gmo)
 
--- | Prepare the data parsed from file for lookups.
-unpackGmoFile :: GmoFile -> Catalog
-unpackGmoFile (GmoFile {..}) = Catalog fSize choose trie
-  where
-    getOrig (len,offs) = L.take (fromIntegral len) $ L.drop (fromIntegral offs) fData
-
-    choose = choosePluralForm' trie
-    
-    getTrans (len,offs) =
-      let bstr = getOrig (len,offs)
-      in  if L.null bstr
-            then [T.empty]
-            else map TLE.decodeUtf8 $ L.split 0 bstr
-
-    originals = map L.toStrict $ map getOrig fOriginals
-    translations = map getTrans fTranslations
-
-    trie = Trie.fromList $ zip originals translations
-
 -- | Load gettext file
 loadCatalog :: FilePath -> IO Catalog
 loadCatalog path = do
   content <- L.readFile path
   let gmoFile = (runGet parseGmo content) {fData = content}
   return $ unpackGmoFile gmoFile
-
 
 -- | Look up for string translation
 lookup :: B.ByteString -> Catalog -> Maybe [T.Text]
@@ -188,45 +144,22 @@ choosePluralForm' trie n =
     Nothing -> if n == 1 then 0 else 1 -- from GNU gettext implementation, known as 'germanic plural form'
     Just (_, expr) -> eval expr n
 
--- | Data.Binary parser for GmoFile structure
-parseGmo :: Get GmoFile
-parseGmo = do
-  magic <- getWord32host
-  getWord32 <- case magic of
-                 0x950412de -> return getWord32le
-                 0xde120495 -> return getWord32be
-                 _ -> fail "Invalid magic number"
-  
-  let getPair :: Get (Word32, Word32)
-      getPair = do
-        x <- getWord32
-        y <- getWord32
-        return (x,y)
+-- | Prepare the data parsed from file for lookups.
+unpackGmoFile :: GmoFile -> Catalog
+unpackGmoFile (GmoFile {..}) = Catalog fSize choose trie
+  where
+    getOrig (len,offs) = L.take (fromIntegral len) $ L.drop (fromIntegral offs) fData
 
-  revision <- getWord32
-  size <- getWord32
-  origOffs <- getWord32
-  transOffs <- getWord32
-  hashSz <- getWord32
-  hashOffs <- getWord32
-  origs <- replicateM (fromIntegral size) getPair
-  trans <- replicateM (fromIntegral size) getPair
-  return $ GmoFile {
-              fMagic = magic,
-              fRevision = revision,
-              fSize = size,
-              fOriginalOffset = origOffs,
-              fTranslationOffset = transOffs,
-              fHashtableSize = hashSz,
-              fHashtableOffset = hashOffs,
-              fOriginals = origs,
-              fTranslations = trans,
-              fData = undefined }
+    choose = choosePluralForm' trie
+    
+    getTrans (len,offs) =
+      let bstr = getOrig (len,offs)
+      in  if L.null bstr
+            then [T.empty]
+            else map TLE.decodeUtf8 $ L.split 0 bstr
 
-withGmoFile :: FilePath -> (GmoFile -> IO a) -> IO a
-withGmoFile path go = do
-  content <- L.readFile path
-  let gmo = (runGet parseGmo content) {fData = content}
-  result <- go gmo
-  return result
+    originals = map L.toStrict $ map getOrig fOriginals
+    translations = map getTrans fTranslations
+
+    trie = Trie.fromList $ zip originals translations
 

@@ -41,6 +41,7 @@ extra-source-files: README.md
 
 library
   exposed-modules:     Data.Gettext
+                       Data.Gettext.GmoFile
                        Data.Gettext.Parsers
                        Data.Gettext.Plural
   build-depends:       base > 4 && < 5,
@@ -53,6 +54,7 @@ library
                        mtl >= 2.2.1,
                        transformers >=0.3,
                        parsec >= 3.1.11
+  ghc-options: -fwarn-unused-imports
 
 executable hgettext
   main-is: hgettext.hs
