@@ -7,6 +7,8 @@ module Data.Gettext.Plural
    eval
   ) where
 
+import Data.Bits (xor)
+
 -- | Supported binary operations
 data BinOp =
     Equals
@@ -40,11 +42,6 @@ order op x y = if op x y then 1 else 0
 
 logic :: (Bool -> Bool -> Bool) -> (Int -> Int -> Int)
 logic op x y = if op (x /= 0) (y /= 0) then 1 else 0
-
-xor :: Bool -> Bool -> Bool
-xor True False = True
-xor False True = True
-xor _ _ = False
 
 evalOp :: BinOp -> (Int -> Int -> Int)
 evalOp Equals = order (==)
