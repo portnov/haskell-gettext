@@ -1,6 +1,11 @@
 {-# LANGUAGE RecordWildCards, OverloadedStrings #-}
 
-module Data.Gettext.GmoFile where
+module Data.Gettext.GmoFile
+  ( -- * Data structures
+    GmoFile (..),
+    -- * Parsing
+    parseGmo
+  ) where
 
 import Control.Monad
 import Data.Binary

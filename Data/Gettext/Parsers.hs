@@ -1,5 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-
+-- | This module contains parsers for:
+--
+-- * Catalog headers (@Name: Value@ lines, that are specified as translation for empty string in @po@ file);
+-- * Plural form selection expressions (specified in @Plural-Forms@ header).
+--
+-- These parsers are already used by main module; but they can be useful for other libraries working with
+-- gettext's files.
+--
 module Data.Gettext.Parsers
   ( -- * Types
     Header, Headers,

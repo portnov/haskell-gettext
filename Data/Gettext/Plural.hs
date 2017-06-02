@@ -1,4 +1,6 @@
-
+-- | This module contains definitions for plural form selection expressions AST,
+-- and an evaluator function for such expressions.
+--
 module Data.Gettext.Plural
   (
    -- * Data types
