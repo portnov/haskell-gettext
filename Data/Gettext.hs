@@ -99,6 +99,8 @@ lookup key gmo = Trie.lookup key (gmoData gmo)
 assocs :: Catalog -> [(B.ByteString, [T.Text])]
 assocs = Trie.toList . gmoData
 
+-- | Obtain headers of the catalog.
+-- Headers are defined as a translation for empty string.
 getHeaders :: Catalog -> Maybe Headers
 getHeaders gmo = getHeaders' (gmoData gmo)
 
@@ -108,6 +110,7 @@ getHeaders' trie =
     Nothing -> Nothing
     Just texts -> either error Just $ parseHeaders (head texts)
 
+-- | Get plural forms selection definition.
 getPluralDefinition :: Catalog -> Maybe (Int, Expr)
 getPluralDefinition gmo = getPluralDefinition' (gmoData gmo)
 
@@ -117,16 +120,30 @@ getPluralDefinition' trie =
     Nothing -> Nothing
     Just headers -> either error Just $ parsePlural headers
 
+-- | Translate a string.
+-- Original message must be defined in @po@ file in @msgid@ line.
 gettext :: Catalog -> B.ByteString -> T.Text
 gettext gmo key =
   case lookup key gmo of
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
     Just texts -> head texts
 
-ngettext :: Catalog -> Int -> B.ByteString -> B.ByteString -> T.Text
+-- | Translate a string and select correct plural form.
+-- Original single form must be defined in @po@ file in @msgid@ line.
+-- Original plural form must be defined in @po@ file in @msgid_plural@ line.
+ngettext :: Catalog
+         -> Int           -- ^ Number
+         -> B.ByteString  -- ^ Single form in original language
+         -> B.ByteString  -- ^ Plural form in original language
+         -> T.Text
 ngettext gmo n single plural = ngettext' gmo n $ single `B.append` "\0" `B.append` plural
 
-ngettext' :: Catalog -> Int -> B.ByteString -> T.Text
+-- | Variant of @ngettext@ for case when for some reason there is only
+-- @msgid@ defined in @po@ file, and no @msgid_plural@, but there are some @msgstr[n]@.
+ngettext' :: Catalog
+          -> Int          -- ^ Number
+          -> B.ByteString -- ^ Single form in original language
+          -> T.Text
 ngettext' gmo n key =
   case lookup key gmo of
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
@@ -138,6 +155,7 @@ ngettext' gmo n key =
                   else plural
       in  texts !! idx
 
+-- | Choose plural form index by number
 choosePluralForm :: Catalog -> Int -> Int
 choosePluralForm gmo = gmoChoosePlural gmo
 

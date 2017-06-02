@@ -1,6 +1,13 @@
 
-module Data.Gettext.Plural where
+module Data.Gettext.Plural
+  (
+   -- * Data types
+   BinOp (..), Expr (..),
+   -- * Expressions
+   eval
+  ) where
 
+-- | Supported binary operations
 data BinOp =
     Equals
   | NotEquals
@@ -18,13 +25,14 @@ data BinOp =
   | Divide
   deriving (Eq, Show)
 
+-- | Plural form selection expression AST
 data Expr =
-    N
-  | Literal Int
-  | If Expr Expr Expr
-  | Negate Expr
-  | Not Expr
-  | Binary BinOp Expr Expr
+    N                        -- ^ The @n@ variable
+  | Literal Int              -- ^ Literal number
+  | If Expr Expr Expr        -- ^ Ternary operator (... ? ... : ...)
+  | Negate Expr              -- ^ Unary arithmetic negation (as in @-1@).
+  | Not Expr                 -- ^ Unary logic negation (as in @! (n == 1)@)
+  | Binary BinOp Expr Expr   -- ^ Binary operation
   deriving (Eq, Show)
 
 order :: (Int -> Int -> Bool) -> (Int -> Int -> Int)
@@ -57,7 +65,10 @@ evalOp Divide = \x y ->
     then error "Division by zero in plural form selection expression"
     else x `div` y
 
-eval :: Expr -> Int -> Int
+-- | Evaluate the expression
+eval :: Expr  -- ^ Expression
+     -> Int   -- ^ Number
+     -> Int   -- ^ Plural form index defined by expression
 eval N n = n
 eval (Literal x) _ = x
 eval (If cond true false) n =

@@ -1,5 +1,15 @@
 
-module Data.Gettext.Parsers where
+module Data.Gettext.Parsers
+  ( -- * Types
+    Header, Headers,
+    -- * Parsing functions
+    parseHeaders,
+    parsePlural,
+    -- * Parsec parsers
+    pHeaders,
+    pExpr,
+    pPlural
+  ) where
 
 import Control.Monad.Identity
 import Data.Either
@@ -12,7 +22,9 @@ import Text.Parsec.Expr
 
 import Data.Gettext.Plural
 
+-- | Catalog header, i.e. one @Name: Value@ line in @po@ file
 type Header = (T.Text, T.Text)
+-- | List of catalog headers
 type Headers = [Header]
 
 pHeader :: Parser Header
@@ -23,9 +35,11 @@ pHeader = do
   value <- many $ noneOf "\r\n"
   return (T.pack name, T.pack value)
 
+-- | Parsec parser for catalog headers
 pHeaders :: Parser Headers
 pHeaders = pHeader `sepEndBy` newline
 
+-- | Parse catalog headers
 parseHeaders :: T.Text -> Either String Headers
 parseHeaders t =
   case parse pHeaders "<Gettext file headers>" t of
@@ -51,6 +65,8 @@ pSimpleExpr = buildExpressionParser table term <?> "simple expression"
     prefix  name fun       = Prefix (do{ reservedOp name; return fun })
     -- postfix name fun       = Postfix (do{ reservedOp name; return fun })
 
+-- | Parse plural form selection expression.
+-- Note: this parses only part which goes after @plural=@.
 pExpr :: Parser Expr
 pExpr = do
     expr <- pSimpleExpr
@@ -67,7 +83,9 @@ pTernary = do
   false <- pExpr
   return (true, false)
 
-
+-- | Parse plural form selection definition.
+-- This parses the whole value of @Plural-Forms@ header,
+-- starting from @nplurals=@.
 pPlural :: Parser (Int, Expr)
 pPlural = do
   symbol "nplurals"
@@ -78,7 +96,6 @@ pPlural = do
   reservedOp "="
   expr <- pExpr
   return (n, expr)
-
 
 cStyle :: GenLanguageDef T.Text () Identity
 cStyle = Token.LanguageDef
@@ -116,6 +133,8 @@ semi = Token.semi lexer
 colon :: Parser String
 colon = Token.colon lexer
 
+-- | Parse plural form selection definition.
+-- Return value is (number of possible plural forms; selection expression).
 parsePlural :: Headers -> Either String (Int, Expr)
 parsePlural headers =
   case lookup (T.pack "Plural-Forms") headers of
