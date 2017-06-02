@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Gettext.Parsers
   ( -- * Types
@@ -11,6 +12,7 @@ module Data.Gettext.Parsers
     pPlural
   ) where
 
+import Control.Monad
 import Control.Monad.Identity
 import Data.Either
 import qualified Data.Text.Lazy as T
@@ -39,12 +41,16 @@ pHeader = do
 pHeaders :: Parser Headers
 pHeaders = pHeader `sepEndBy` newline
 
--- | Parse catalog headers
+-- | Parse catalog headers.
+-- NB: for now this function does not use Parsec.
 parseHeaders :: T.Text -> Either String Headers
-parseHeaders t =
-  case parse pHeaders "<Gettext file headers>" t of
-    Left e -> Left (show e)
-    Right hs -> Right hs
+parseHeaders t = do
+  let lines = filter (not . T.null) $ T.splitOn "\n" t
+  forM lines $ \line ->
+    case T.splitOn ": " line of
+      [name, value] -> return (name, value)
+      (name:values) -> return (name, T.intercalate ": " values)
+      _ -> Left $ "Invalid gettext file header: " ++ T.unpack line
 
 pSimpleExpr :: Parser Expr
 pSimpleExpr = buildExpressionParser table term <?> "simple expression"
