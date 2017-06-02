@@ -1,5 +1,5 @@
 name:                haskell-gettext
-version:             0.1.0.1
+version:             0.1.1.0
 synopsis:            GetText runtime library implementation in pure Haskell
 description:         This package is pure Haskell implementation of GetText library runtime.
                      It allows you to:
