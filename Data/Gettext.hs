@@ -7,7 +7,9 @@ module Data.Gettext
    -- * Loading and using translations
    loadCatalog,
    lookup,
-   gettext, ngettext, ngettext',
+   gettext, cgettext,
+   ngettext, cngettext,
+   ngettext',
    assocs,
    -- * Utilities for plural forms
    getHeaders,
@@ -122,29 +124,50 @@ getPluralDefinition' trie =
 
 -- | Translate a string.
 -- Original message must be defined in @po@ file in @msgid@ line.
-gettext :: Catalog -> B.ByteString -> T.Text
+gettext :: Catalog
+        -> B.ByteString -- ^ Original string
+        -> T.Text
 gettext gmo key =
   case lookup key gmo of
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
     Just texts -> head texts
 
+-- | Translate a string within specific context.
+cgettext :: Catalog
+         -> B.ByteString -- ^ Message context (@msgctxt@ line in @po@ file)
+         -> B.ByteString -- ^ Original string
+         -> T.Text
+cgettext gmo context key = gettext gmo (context `B.append` "\4" `B.append` key)
+
 -- | Translate a string and select correct plural form.
 -- Original single form must be defined in @po@ file in @msgid@ line.
 -- Original plural form must be defined in @po@ file in @msgid_plural@ line.
 ngettext :: Catalog
-         -> Int           -- ^ Number
          -> B.ByteString  -- ^ Single form in original language
          -> B.ByteString  -- ^ Plural form in original language
+         -> Int           -- ^ Number
          -> T.Text
-ngettext gmo n single plural = ngettext' gmo n $ single `B.append` "\0" `B.append` plural
+ngettext gmo single plural n = ngettext' gmo (single `B.append` "\0" `B.append` plural) n
+
+-- | Translate a string and select correct plural form, within specific context
+-- Original single form must be defined in @po@ file in @msgid@ line.
+-- Original plural form must be defined in @po@ file in @msgid_plural@ line.
+cngettext :: Catalog
+         -> B.ByteString  -- ^ Message context (@msgctxt@ line in @po@ file)
+         -> B.ByteString  -- ^ Single form in original language
+         -> B.ByteString  -- ^ Plural form in original language
+         -> Int           -- ^ Number
+         -> T.Text
+cngettext gmo context single plural n =
+  ngettext' gmo (context `B.append` "\4" `B.append` single `B.append` "\0" `B.append` plural) n
 
 -- | Variant of @ngettext@ for case when for some reason there is only
 -- @msgid@ defined in @po@ file, and no @msgid_plural@, but there are some @msgstr[n]@.
 ngettext' :: Catalog
-          -> Int          -- ^ Number
           -> B.ByteString -- ^ Single form in original language
+          -> Int          -- ^ Number
           -> T.Text
-ngettext' gmo n key =
+ngettext' gmo key n =
   case lookup key gmo of
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
     Just texts ->
