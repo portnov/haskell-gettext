@@ -127,7 +127,13 @@ ngettext :: Catalog -> Int -> B.ByteString -> T.Text
 ngettext gmo n key =
   case lookup key gmo of
     Nothing -> TLE.decodeUtf8 $ L.fromStrict key
-    Just texts -> texts !! choosePluralForm gmo n
+    Just texts ->
+      let plural = choosePluralForm gmo n
+          idx = if plural >= length texts
+                  then 0 -- if there are not enough plural forms defined, always use the first,
+                         -- it is probably the most correct
+                  else plural
+      in  texts !! idx
 
 choosePluralForm :: Catalog -> Int -> Int
 choosePluralForm gmo = gmoChoosePlural gmo
