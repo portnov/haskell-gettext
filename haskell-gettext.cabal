@@ -59,7 +59,7 @@ library
 executable hgettext
   main-is: hgettext.hs
   build-depends: base > 4 && < 5,
-                 haskell-src-exts >= 1.19.1,
+                 haskell-src-exts >= 1.18,
                  uniplate >= 1.6.12,
                  time >= 1.5.0,
                  old-locale >= 1.0,

@@ -34,6 +34,7 @@ module Data.Gettext
    gettext, cgettext,
    ngettext, cngettext,
    ngettext',
+   context,
    assocs,
    -- * Utilities for plural forms
    getHeaders,
@@ -158,6 +159,17 @@ ngettext' gmo key n =
                          -- it is probably the most correct
                   else plural
       in  texts !! idx
+
+-- | Get sub-catalog for specific context
+context :: Catalog
+        -> B.ByteString -- ^ Context
+        -> Catalog
+context gmo ctxt =
+  let trie = Trie.submap (ctxt `B.append` "\4") (gmoData gmo)
+  in  Catalog {
+        gmoSize = fromIntegral (Trie.size trie),
+        gmoChoosePlural = gmoChoosePlural gmo,
+        gmoData = trie }
 
 -- | Choose plural form index by number
 choosePluralForm :: Catalog -> Int -> Int
