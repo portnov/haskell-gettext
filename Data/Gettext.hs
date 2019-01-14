@@ -52,7 +52,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Encoding as TLE
-import qualified Data.Trie as Trie
+import qualified Data.Map as M
 import Text.Printf
 
 import Data.Gettext.GmoFile
@@ -63,7 +63,7 @@ import Data.Gettext.Parsers
 data Catalog = Catalog {
   gmoSize :: Word32,
   gmoChoosePlural :: Int -> Int,
-  gmoData :: Trie.Trie [T.Text] }
+  gmoData :: M.Map B.ByteString [T.Text] }
 
 instance Show Catalog where
   show gmo = printf "<GetText data size=%d>" (gmoSize gmo)
@@ -77,20 +77,20 @@ loadCatalog path = do
 
 -- | Look up for string translation
 lookup :: B.ByteString -> Catalog -> Maybe [T.Text]
-lookup key gmo = Trie.lookup key (gmoData gmo)
+lookup key gmo = M.lookup key (gmoData gmo)
 
 -- | Get all translation pairs
 assocs :: Catalog -> [(B.ByteString, [T.Text])]
-assocs = Trie.toList . gmoData
+assocs = M.assocs . gmoData
 
 -- | Obtain headers of the catalog.
 -- Headers are defined as a translation for empty string.
 getHeaders :: Catalog -> Maybe Headers
 getHeaders gmo = getHeaders' (gmoData gmo)
 
-getHeaders' :: Trie.Trie [T.Text] -> Maybe Headers
+getHeaders' :: M.Map B.ByteString [T.Text] -> Maybe Headers
 getHeaders' trie =
-  case Trie.lookup "" trie of
+  case M.lookup "" trie of
     Nothing -> Nothing
     Just texts -> either error Just $ parseHeaders (head texts)
 
@@ -98,7 +98,7 @@ getHeaders' trie =
 getPluralDefinition :: Catalog -> Maybe (Int, Expr)
 getPluralDefinition gmo = getPluralDefinition' (gmoData gmo)
 
-getPluralDefinition' :: Trie.Trie [T.Text] -> Maybe (Int, Expr)
+getPluralDefinition' :: M.Map B.ByteString [T.Text] -> Maybe (Int, Expr)
 getPluralDefinition' trie =
   case getHeaders' trie of
     Nothing -> Nothing
@@ -165,9 +165,12 @@ context :: Catalog
         -> B.ByteString -- ^ Context
         -> Catalog
 context gmo ctxt =
-  let trie = Trie.submap (ctxt `B.append` "\4") (gmoData gmo)
+  let n = B.length ctxt + 1
+      prefix = ctxt `B.append` "\4"
+      trie =
+        M.fromList [(B.drop n key, value) | (key, value) <- M.assocs (gmoData gmo), prefix `B.isPrefixOf` key]
   in  Catalog {
-        gmoSize = fromIntegral (Trie.size trie),
+        gmoSize = fromIntegral (M.size trie),
         gmoChoosePlural = gmoChoosePlural gmo,
         gmoData = trie }
 
@@ -175,7 +178,7 @@ context gmo ctxt =
 choosePluralForm :: Catalog -> Int -> Int
 choosePluralForm gmo = gmoChoosePlural gmo
 
-choosePluralForm' :: Trie.Trie [T.Text] -> Int -> Int
+choosePluralForm' :: M.Map B.ByteString [T.Text] -> Int -> Int
 choosePluralForm' trie n =
   case getPluralDefinition' trie of
     Nothing -> if n == 1 then 0 else 1 -- from GNU gettext implementation, known as 'germanic plural form'
@@ -198,5 +201,5 @@ unpackGmoFile (GmoFile {..}) = Catalog fSize choose trie
     originals = map L.toStrict $ map getOrig fOriginals
     translations = map getTrans fTranslations
 
-    trie = Trie.fromList $ zip originals translations
+    trie = M.fromList $ zip originals translations
 
