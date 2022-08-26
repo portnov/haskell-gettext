@@ -52,8 +52,13 @@ parseGmo = do
   transOffs <- getWord32
   hashSz <- getWord32
   hashOffs <- getWord32
+
+  skip $ max 0 (fromIntegral origOffs - 28)
   origs <- replicateM (fromIntegral size) getPair
+
+  skip $ max 0 (fromIntegral transOffs - fromIntegral origOffs - fromIntegral size * 8)
   trans <- replicateM (fromIntegral size) getPair
+
   return $ GmoFile {
               fMagic = magic,
               fRevision = revision,
