@@ -34,10 +34,9 @@ maintainer:          portnov84@rambler.ru
 copyright:           © 2017–2019 Ilya Portnov
 category:            Text
 build-type:          Simple
-
-extra-source-files: README.md
-                    examples/gmodump.hs
-                    examples/gmotest.hs
+extra-doc-files:     README.md
+extra-source-files:  examples/gmodump.hs
+                     examples/gmotest.hs
 
 common shared
   build-depends:    base == 4.*
