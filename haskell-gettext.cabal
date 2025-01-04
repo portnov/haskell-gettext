@@ -50,24 +50,24 @@ library
                        Data.Gettext.GmoFile
                        Data.Gettext.Parsers
                        Data.Gettext.Plural
-  build-depends:       binary >=0.7,
-                       bytestring >=0.10,
-                       text >= 1.2,
-                       containers >=0.5,
-                       time >=1.4,
-                       mtl >= 2.2.1,
-                       transformers >=0.3,
-                       parsec >= 3.1.11
+  build-depends:       binary >=0.7 && < 0.9,
+                       bytestring >=0.10 && < 0.13,
+                       text >= 1.2 && < 2.2,
+                       containers >=0.5 && < 0.7,
+                       time >=1.4 && < 1.13,
+                       mtl >= 2.2.1 && < 2.4,
+                       transformers >=0.3 && < 0.7,
+                       parsec >= 3.1.11 && < 3.2
   hs-source-dirs:      lib/
 
 executable hgettext
   import: shared
   main-is: Main.hs
-  build-depends: haskell-src-exts >= 1.18,
-                 uniplate >= 1.6.12,
-                 time >= 1.5.0,
-                 old-locale >= 1.0,
-                 filepath >= 1.4
+  build-depends: haskell-src-exts >= 1.18 && < 1.24,
+                 uniplate >= 1.6.12 && < 1.7,
+                 time >= 1.5.0 && < 1.13,
+                 old-locale >= 1.0 && < 1.1,
+                 filepath >= 1.4 && < 1.6
   hs-source-dirs: exe/
 
 source-repository head
