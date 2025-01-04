@@ -51,22 +51,22 @@ library
                        Data.Gettext.Plural
   build-depends:       binary >=0.7 && < 0.9,
                        bytestring >=0.10 && < 0.13,
-                       text >= 1.2 && < 2.2,
                        containers >=0.5 && < 0.7,
-                       time >=1.4 && < 1.13,
                        mtl >= 2.2.1 && < 2.4,
-                       transformers >=0.3 && < 0.7,
-                       parsec >= 3.1.11 && < 3.2
+                       parsec >= 3.1.11 && < 3.2,
+                       text >= 1.2 && < 2.2,
+                       time >=1.4 && < 1.13,
+                       transformers >=0.3 && < 0.7
   hs-source-dirs:      lib/
 
 executable hgettext
   import:            shared
   main-is:           Main.hs
-  build-depends:     haskell-src-exts >= 1.18 && < 1.24,
-                     uniplate >= 1.6.12 && < 1.7,
+  build-depends:     filepath >= 1.4 && < 1.6,
+                     haskell-src-exts >= 1.18 && < 1.24,
+                     old-locale >= 1.0 && < 1.1
                      time >= 1.5.0 && < 1.13,
-                     old-locale >= 1.0 && < 1.1,
-                     filepath >= 1.4 && < 1.6
+                     uniplate >= 1.6.12 && < 1.7,
   hs-source-dirs:    exe/
 
 source-repository head
