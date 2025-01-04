@@ -1,6 +1,8 @@
 -- (C)  vasylp https://github.com/vasylp/hgettext/blob/master/src/hgettext.hs
 
-import qualified Language.Haskell.Exts as H 
+import qualified Language.Haskell.Exts as H
+
+import Options
 
 import System.Environment
 import System.Console.GetOpt
@@ -21,39 +23,8 @@ import Data.Version (showVersion)
 version = undefined
 -- import Paths_haskell_gettext (version)
 
-data Options = Options {
-      outputFile :: String,
-      keywords :: [String],
-      printVersion :: Bool
-    } deriving Show
-
-options :: [OptDescr (Options->Options)]
-options = 
-    [
-     Option ['o'] ["output"] 
-                (ReqArg (\o opts -> opts {outputFile = o}) "FILE") 
-                "write output to specified file",
-     Option ['d'] ["default-domain"] 
-            (ReqArg (\d opts -> opts {outputFile = d ++ ".po"}) "NAME")
-            "use NAME.po instead of messages.po",
-     Option ['k'] ["keyword"] 
-            (ReqArg (\d opts -> opts {keywords = d: keywords opts}) "WORD")
-            "function names, in which searched words are wrapped. Can be used multiple times, for multiple funcitons",
-     Option [] ["version"]
-            (NoArg (\opts -> opts {printVersion = True}))
-            "print version of hgettexts"
-    ]
-
-
-defaultOptions = Options "messages.po" ["__", "lprintf"] False
-
-parseArgs :: [String] -> IO (Options, [String])
-parseArgs args = 
-    case getOpt Permute options args of
-      (o, n, []) -> return (foldl (flip id) defaultOptions o, n)
-      (_, _, errs) -> ioError (userError (concat errs ++ usageInfo header options))
-    where header = "Usage: hgettext [OPTION] [INPUTFILE] ..."
-
+-- xxx add default options
+-- defaultOptions = Options "messages.po" ["__", "lprintf"] False
 
 toTranslate :: [String] -> H.ParseResult (H.Module H.SrcSpanInfo) -> [(H.SrcSpanInfo, String)]
 toTranslate f (H.ParseOk z) = nub [ (loc, s) | H.App _ (H.Var _ (H.UnQual _ (H.Ident _ x))) (H.Lit _ (H.String loc s _)) <- universeBi z, x `elem` f]
@@ -95,18 +66,16 @@ formatPotFile lines = do
                 "\"Content-Transfer-Encoding: 8bit\\n\"",
                 ""]
 
-process :: Options -> [String] -> IO ()
-process Options{printVersion = True} _ = 
+process :: Options -> IO ()
+process Options{printVersion = True} =
     putStrLn $ "hgettext, version " ++ (showVersion version)
-
-process opts fl = do
-  t <- mapM read' fl
+process opts = do
+  t <- mapM read' (inputFiles opts)
   pot <- formatPotFile $ map (\(n,c) -> formatMessages n $ toTranslate (keywords opts) c) t
   writeFile (outputFile opts) pot
     where read' "-" = getContents >>= \c -> return ("-", H.parseFileContents c)
           read' f = H.parseFile f >>= \m -> return (f, m)
 
-main = 
-    getArgs >>= parseArgs >>= uncurry process
-
-
+main = do
+    opts <- parseOptions
+    process opts
