@@ -32,7 +32,7 @@ options :: Parser Options
 options = Options <$> inputs <*> outfile <*> many keyword <*> version
 
 inputs :: Parser [FilePath]
-inputs = many (argument str (metavar "PATH..."))
+inputs = many (strArgument (metavar "PATH..."))
 
 outfile :: Parser FilePath
 outfile = output <|> ((FP.<.> "po") <$> defaultDomain) <|> pure "messages.po"

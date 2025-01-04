@@ -68,14 +68,22 @@ formatPotFile lines = do
 
 process :: Options -> IO ()
 process Options{printVersion = True} =
-    putStrLn $ "hgettext, version " ++ (showVersion version)
-process opts = do
-  t <- mapM read' (inputFiles opts)
-  pot <- formatPotFile $ map (\(n,c) -> formatMessages n $ toTranslate (keywords opts) c) t
-  writeFile (outputFile opts) pot
-    where read' "-" = getContents >>= \c -> return ("-", H.parseFileContents c)
-          read' f = H.parseFile f >>= \m -> return (f, m)
+        putStrLn $ "hgettext, version " ++ (showVersion version)
+process opts
+    | null (inputFiles opts) = do
+        putStrLn "hgettext: missing arguments"
+    | otherwise = do
+        t <- mapM read' (inputFiles opts)
+        pot <- formatPotFile $
+                 map (\(n,c) -> formatMessages n $
+                                  toTranslate (keywords opts) c) t
+        writeFile (outputFile opts) pot
+    where
+        read' :: String -> IO (String, H.ParseResult (H.Module H.SrcSpanInfo))
+        read' "-" = getContents >>= \c -> return ("-", H.parseFileContents c)
+        read' f = H.parseFile f >>= \m -> return (f, m)
 
+main :: IO ()
 main = do
     opts <- parseOptions
     process opts

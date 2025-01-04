@@ -1,16 +1,15 @@
-# Get `output` argument.
 # 1. Get `output` argument.
-$ hgettext --output out.po && ls
+$ hgettext --output out.po Menu.hs && ls
 > /out.po/
 
 # 2. Get `output` argument (short).
-$ hgettext -o out.po && ls
+$ hgettext -o out.po Menu.hs && ls
 > /out.po/
 
 # 3. Get `default domain` argument.
-$ hgettext --default-domain dom && ls
+$ hgettext --default-domain dom Menu.hs && ls
 > /dom.po/
 
-# 3. Get `default domain` argument (short).
-$ hgettext -d dom && ls
+# 4. Get `default domain` argument (short).
+$ hgettext -d dom Menu.hs && ls
 > /dom.po/
