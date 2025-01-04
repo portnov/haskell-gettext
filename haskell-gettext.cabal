@@ -39,13 +39,18 @@ extra-source-files: README.md
                     examples/gmodump.hs
                     examples/gmotest.hs
 
+common shared
+  build-depends:    base == 4.*
+  ghc-options:      -Wall
+  default-language: Haskell2010
+
 library
+  import:              shared
   exposed-modules:     Data.Gettext
                        Data.Gettext.GmoFile
                        Data.Gettext.Parsers
                        Data.Gettext.Plural
-  build-depends:       base > 4 && < 5,
-                       binary >=0.7,
+  build-depends:       binary >=0.7,
                        bytestring >=0.10,
                        text >= 1.2,
                        containers >=0.5,
@@ -54,19 +59,16 @@ library
                        transformers >=0.3,
                        parsec >= 3.1.11
   hs-source-dirs:      lib/
-  ghc-options: -fwarn-unused-imports
-  default-language: Haskell2010
 
 executable hgettext
+  import: shared
   main-is: Main.hs
-  build-depends: base > 4 && < 5,
-                 haskell-src-exts >= 1.18,
+  build-depends: haskell-src-exts >= 1.18,
                  uniplate >= 1.6.12,
                  time >= 1.5.0,
                  old-locale >= 1.0,
                  filepath >= 1.4
   hs-source-dirs: exe/
-  default-language: Haskell2010
 
 source-repository head
   type: git
