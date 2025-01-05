@@ -23,9 +23,6 @@ import Data.Version (showVersion)
 version = undefined
 -- import Paths_haskell_gettext (version)
 
--- xxx add default options
--- defaultOptions = Options "messages.po" ["__", "lprintf"] False
-
 toTranslate :: [String] -> H.ParseResult (H.Module H.SrcSpanInfo) -> [(H.SrcSpanInfo, String)]
 toTranslate f (H.ParseOk z) = nub [ (loc, s) | H.App _ (H.Var _ (H.UnQual _ (H.Ident _ x))) (H.Lit _ (H.String loc s _)) <- universeBi z, x `elem` f]
 toTranslate _ _ = []

@@ -28,7 +28,9 @@ infoOpts = info (options <**> helper)
   <> header "hello - a test for optparse-applicative" )
 
 options :: Parser Options
-options = Options <$> inputs <*> outfile <*> many keyword <*> version
+options = Options <$> inputs <*> outfile <*> kwsDef <*> version
+    where
+        kwsDef = ("__" :) <$> many keyword
 
 inputs :: Parser [FilePath]
 inputs = many (strArgument (metavar "PATH..."))
