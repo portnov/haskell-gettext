@@ -1,5 +1,7 @@
 -- (C)  vasylp https://github.com/vasylp/hgettext/blob/master/src/hgettext.hs
 
+import qualified Data.Text as T
+import qualified Data.Text.IO.Utf8 as Utf8
 import qualified Language.Haskell.Exts as H
 
 import Options
@@ -32,11 +34,21 @@ formatMessages :: String -> [(H.SrcSpanInfo, String)] -> String
 formatMessages path l = concat $ map potEntry $ nubBy ((==) `on` snd) $ sortBy (comparing snd) l
     where potEntry (l, s) = unlines [
                              "#: " ++ showSrc l,
-                             "msgid " ++ (show s),
+                             "msgid " ++ (showStringC s),
                              "msgstr \"\"",
                              ""
                             ]
           showSrc l = path ++ ":" ++ show (H.srcSpanStartLine (H.srcInfoSpan l)) ++ ":" ++ show (H.srcSpanStartColumn (H.srcInfoSpan l))
+
+-- Escape a string in a C-like fashion,
+-- see https://www.ibm.com/docs/en/i/7.4?topic=literals-string
+showStringC :: String -> String
+showStringC s0 = '"' : concatMap showChar s0 ++ "\""
+    where
+      showChar '"' = "\\\""
+      showChar '\\' = "\\\\"
+      showChar '\n' = "\\n"
+      showChar c = return c
 
 
 formatPotFile :: [String] -> IO String
@@ -46,6 +58,7 @@ formatPotFile lines = do
     let header = formatPotHeader timeStr
     return $ concat $ header: lines
   where
+    formatPotHeader :: String -> String
     formatPotHeader timeStr =
        unlines ["# Translation file",
                 "",
@@ -74,9 +87,10 @@ process opts
         pot <- formatPotFile $
                  map (\(n,c) -> formatMessages n $
                                   toTranslate (keywords opts) c) t
-        writeFile (outputFile opts) pot
+        Utf8.writeFile (outputFile opts) (T.pack pot)
     where
-        read' :: String -> IO (String, H.ParseResult (H.Module H.SrcSpanInfo))
+        read' :: FilePath ->
+                 IO (String, H.ParseResult (H.Module H.SrcSpanInfo))
         read' "-" = getContents >>= \c -> return ("-", H.parseFileContents c)
         read' f = H.parseFile f >>= \m -> return (f, m)
 
