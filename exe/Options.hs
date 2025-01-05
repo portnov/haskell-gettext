@@ -21,7 +21,6 @@ parseOptions = execParser infoOpts
 -------------------------------------------------------------------------------
 -- Parsers/properties
 
--- xxx test help
 infoOpts :: ParserInfo Options
 infoOpts = info (options <**> helper)
   ( fullDesc
@@ -42,14 +41,14 @@ outfile = output <|> ((FP.<.> "po") <$> defaultDomain) <|> pure "messages.po"
             ( long "output"
             <> short 'o'
             <> metavar "FILE"
-            <> help "Write output to specified file." )
+            <> help "write output to specified file" )
 
         defaultDomain :: Parser FilePath
         defaultDomain = strOption
             ( long "default-domain"
             <> short 'd'
             <> metavar "NAME"
-            <> help "Use NAME.po instead of messages.po." )
+            <> help "use NAME.po instead of messages.po" )
 
 keyword :: Parser String
 keyword = strOption
@@ -58,10 +57,10 @@ keyword = strOption
                 <> metavar "WORD"
                 <> help "function names, in which searched words are \
                         \wrapped. Can be used multiple times, for multiple \
-                        \funcitons." )
+                        \funcitons" )
 
 version :: Parser Bool
 version = switch
             ( long "version"
             <> short 'v'
-            <> help "Print version of hgettext" )
+            <> help "print version of hgettext" )

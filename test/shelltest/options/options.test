@@ -13,3 +13,7 @@ $ hgettext --default-domain dom Menu.hs && ls
 # 4. Get `default domain` argument (short).
 $ hgettext -d dom Menu.hs && ls
 > /dom.po/
+
+# 5. Print help.
+$ hgettext --help Menu.hs
+> /Show this help text/
