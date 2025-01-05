@@ -1,7 +1,10 @@
 #! /bin/bash
 set -e
 
-## TODO clean artifacts regardless
+# Run shelltestrunner tests.
+# Translation artifacts will be cleaned always before running tests,
+# and after *only if the testuite succeded* (to ease debugging).
+# If you want to clean atifacts manually, type `./run-tests.sh clean`.
 
 ### Helpers
 
@@ -22,12 +25,17 @@ if ! which shelltest > /dev/null; then
   exit 1
 fi
 
+if [ "$1" = "clean" ]; then
+  cleanArtifacts
+  exit
+fi
+
+# Build and fetch proper binary.
 cabal build hgettext
 Bin=$(cabal list-bin hgettext)
 
 
-# Run all tests, and clean before (always) and after (only if shelltest
-# exits without errors).
+# Run all tests.
 cleanArtifacts
 shelltest --color --execdir --with "$Bin" test/shelltest/
 cleanArtifacts
