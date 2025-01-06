@@ -6,24 +6,18 @@ import qualified Language.Haskell.Exts as H
 
 import Options
 
-import System.Environment
-import System.Console.GetOpt
 import Data.Time
-import System.Locale hiding (defaultTimeLocale)
 
 import Data.Generics.Uniplate.Data
 
 -- import Distribution.Simple.PreProcess.Unlit
 
 import Data.List
-import Data.Char
 import Data.Ord
 import Data.Function (on)
-import System.FilePath
 
 import Data.Version (showVersion)
-version = undefined
--- import Paths_haskell_gettext (version)
+import Paths_haskell_gettext (version)
 
 toTranslate :: [String] -> H.ParseResult (H.Module H.SrcSpanInfo) -> [(H.SrcSpanInfo, String)]
 toTranslate f (H.ParseOk z) = nub [ (loc, s) | H.App _ (H.Var _ (H.UnQual _ (H.Ident _ x))) (H.Lit _ (H.String loc s _)) <- universeBi z, x `elem` f]
@@ -32,31 +26,31 @@ toTranslate _ _ = []
 -- Create list of messages from a single file
 formatMessages :: String -> [(H.SrcSpanInfo, String)] -> String
 formatMessages path l = concat $ map potEntry $ nubBy ((==) `on` snd) $ sortBy (comparing snd) l
-    where potEntry (l, s) = unlines [
-                             "#: " ++ showSrc l,
+    where potEntry (wl, s) = unlines [
+                             "#: " ++ showSrc wl,
                              "msgid " ++ (showStringC s),
                              "msgstr \"\"",
                              ""
                             ]
-          showSrc l = path ++ ":" ++ show (H.srcSpanStartLine (H.srcInfoSpan l)) ++ ":" ++ show (H.srcSpanStartColumn (H.srcInfoSpan l))
+          showSrc wl = path ++ ":" ++ show (H.srcSpanStartLine (H.srcInfoSpan wl)) ++ ":" ++ show (H.srcSpanStartColumn (H.srcInfoSpan wl))
 
 -- Escape a string in a C-like fashion,
 -- see https://www.ibm.com/docs/en/i/7.4?topic=literals-string
 showStringC :: String -> String
-showStringC s0 = '"' : concatMap showChar s0 ++ "\""
+showStringC s0 = '"' : concatMap showCharC s0 ++ "\""
     where
-      showChar '"' = "\\\""
-      showChar '\\' = "\\\\"
-      showChar '\n' = "\\n"
-      showChar c = return c
+      showCharC '"' = "\\\""
+      showCharC '\\' = "\\\\"
+      showCharC '\n' = "\\n"
+      showCharC c = return c
 
 
 formatPotFile :: [String] -> IO String
-formatPotFile lines = do
+formatPotFile ls = do
     time <- getZonedTime
     let timeStr = formatTime defaultTimeLocale "%F %R%z" time
     let header = formatPotHeader timeStr
-    return $ concat $ header: lines
+    return $ concat $ header: ls
   where
     formatPotHeader :: String -> String
     formatPotHeader timeStr =
@@ -78,7 +72,8 @@ formatPotFile lines = do
 
 process :: Options -> IO ()
 process Options{printVersion = True} =
-        putStrLn $ "hgettext, version " ++ (showVersion version)
+        putStrLn $ "hgettext (from haskell-gettext), version " ++
+                     (showVersion version)
 process opts
     | null (inputFiles opts) = do
         putStrLn "hgettext: missing arguments"

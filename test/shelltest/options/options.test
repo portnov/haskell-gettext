@@ -25,3 +25,7 @@ $ hgettext Menu.hs && cat messages.po
 # 7. Read strings (user defined keyword).
 $ hgettext --keyword __s Menu.hs && cat messages.po
 > /User defined/
+
+# 8. Show version
+$ hgettext --version
+> /(from haskell-gettext)/
