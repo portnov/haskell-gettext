@@ -119,7 +119,7 @@ cgettext :: Catalog
          -> B.ByteString -- ^ Message context (@msgctxt@ line in @po@ file)
          -> B.ByteString -- ^ Original string
          -> T.Text
-cgettext gmo context key = gettext gmo (context `B.append` "\4" `B.append` key)
+cgettext gmo ctx key = gettext gmo (ctx `B.append` "\4" `B.append` key)
 
 -- | Translate a string and select correct plural form.
 -- Original single form must be defined in @po@ file in @msgid@ line.
@@ -140,8 +140,8 @@ cngettext :: Catalog
          -> B.ByteString  -- ^ Plural form in original language
          -> Int           -- ^ Number
          -> T.Text
-cngettext gmo context single plural n =
-  ngettext' gmo (context `B.append` "\4" `B.append` single `B.append` "\0" `B.append` plural) n
+cngettext gmo ctx single plural n =
+  ngettext' gmo (ctx `B.append` "\4" `B.append` single `B.append` "\0" `B.append` plural) n
 
 -- | Variant of @ngettext@ for case when for some reason there is only
 -- @msgid@ defined in @po@ file, and no @msgid_plural@, but there are some @msgstr[n]@.

@@ -69,11 +69,3 @@ parseGmo = do
               fOriginals = origs,
               fTranslations = trans,
               fData = undefined }
-
-withGmoFile :: FilePath -> (GmoFile -> IO a) -> IO a
-withGmoFile path go = do
-  content <- L.readFile path
-  let gmo = (runGet parseGmo content) {fData = content}
-  result <- go gmo
-  return result
-
