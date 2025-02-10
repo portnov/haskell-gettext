@@ -25,7 +25,7 @@ infoOpts :: ParserInfo Options
 infoOpts = info (options <**> helper)
   ( fullDesc
   <> progDesc "Extract translatable strings from Haskell source files."
-  <> header "hello - a test for optparse-applicative" )
+  <> header "hgettext (from haskell-gettext)" )
 
 options :: Parser Options
 options = Options <$> inputs <*> outfile <*> kwsDef <*> version
