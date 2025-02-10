@@ -1,3 +1,4 @@
+cabal-version:       2.2
 name:                haskell-gettext
 version:             0.1.2.0
 synopsis:            GetText runtime library implementation in pure Haskell
@@ -16,7 +17,7 @@ description:         This package is pure Haskell implementation of GetText libr
                      .
                      This package has the following advantages comparing to hgettext:
                      .
-                     * It is easier to build it on different platforms, since it has no dependency on 
+                     * It is easier to build it on different platforms, since it has no dependency on
                        C code;
                      .
                      * It does not depend on additional C libraries in runtime;
@@ -25,46 +26,49 @@ description:         This package is pure Haskell implementation of GetText libr
                        variables to store "current catalog" (current locale), the catalog should be
                        specified for each call of translation function. So it can be much simpler to
                        use this library for example in web applications.
-                     
-license:             BSD3
+
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              IlyaPortnov
 maintainer:          portnov84@rambler.ru
--- copyright:           
+copyright:           © 2017–2019 Ilya Portnov
 category:            Text
 build-type:          Simple
-cabal-version:       >=1.8
+extra-doc-files:     README.md
+extra-source-files:  examples/gmodump.hs
+                     examples/gmotest.hs
 
-extra-source-files: README.md
-                    examples/gmodump.hs
-                    examples/gmotest.hs
+common shared
+  build-depends:    base == 4.*
+  ghc-options:      -Wall
+  default-language: Haskell2010
 
 library
+  import:              shared
   exposed-modules:     Data.Gettext
                        Data.Gettext.GmoFile
                        Data.Gettext.Parsers
                        Data.Gettext.Plural
-  build-depends:       base > 4 && < 5,
-                       binary >=0.7,
-                       bytestring >=0.10,
-                       text >= 1.2,
-                       containers >=0.5,
-                       time >=1.4,
-                       mtl >= 2.2.1,
-                       transformers >=0.3,
-                       parsec >= 3.1.11
-  ghc-options: -fwarn-unused-imports
+  build-depends:       binary >=0.7 && < 0.9,
+                       bytestring >=0.10 && < 0.13,
+                       containers >=0.5 && < 0.7,
+                       mtl >= 2.2.1 && < 2.4,
+                       parsec >= 3.1.11 && < 3.2,
+                       text >= 1.2 && < 2.2,
+                       time >=1.4 && < 1.13,
+                       transformers >=0.3 && < 0.7
+  hs-source-dirs:      lib/
 
 executable hgettext
-  main-is: hgettext.hs
-  build-depends: base > 4 && < 5,
-                 haskell-src-exts >= 1.18,
-                 uniplate >= 1.6.12,
-                 time >= 1.5.0,
-                 old-locale >= 1.0,
-                 filepath >= 1.4
+  import:            shared
+  main-is:           Main.hs
+  build-depends:     filepath >= 1.4 && < 1.6,
+                     haskell-src-exts >= 1.18 && < 1.24,
+                     old-locale >= 1.0 && < 1.1
+                     time >= 1.5.0 && < 1.13,
+                     uniplate >= 1.6.12 && < 1.7,
+  hs-source-dirs:    exe/
 
 source-repository head
   type: git
   location: https://github.com/portnov/haskell-gettext.git
-
