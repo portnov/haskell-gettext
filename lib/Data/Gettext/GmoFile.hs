@@ -10,8 +10,10 @@ module Data.Gettext.GmoFile
 import Control.Monad
 import Data.Binary
 import Data.Binary.Get
-import qualified Data.ByteString.Lazy as L
 import Text.Printf
+
+import qualified Data.ByteString.Lazy as L
+import qualified Numeric as N
 
 -- | This structure describes the binary structure of Gettext @.mo/.gmo@ file.
 data GmoFile = GmoFile {
@@ -38,8 +40,10 @@ parseGmo = do
   getWord32 <- case magic of
                  0x950412de -> return getWord32le
                  0xde120495 -> return getWord32be
-                 _ -> fail "Invalid magic number"
-  
+                 _ -> fail $ "parseGmo: Invalid magic number " <>
+                             "0x" <> N.showHex magic "" <>
+                             " (not an .mo file?)"
+
   let getPair :: Get (Word32, Word32)
       getPair = do
         x <- getWord32
