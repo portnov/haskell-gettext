@@ -1,83 +1,56 @@
--- (C)  vasylp https://github.com/vasylp/hgettext/blob/master/src/hgettext.hs
+-- Originally copied from https://github.com/vasylp/hgettext/
+-- © 2009 Vasyl Pasternak, BSD-3-Clause.
 
-import qualified Language.Haskell.Exts as H 
+import Options
+import Paths_haskell_gettext (version)
 
-import System.Environment
-import System.Console.GetOpt
-import Data.Time
-import System.Locale hiding (defaultTimeLocale)
-
-import Data.Generics.Uniplate.Data
-
--- import Distribution.Simple.PreProcess.Unlit
-
-import Data.List
-import Data.Char
-import Data.Ord
-import Data.Function (on)
-import System.FilePath
-
-import Data.Version (showVersion)
-version = undefined
--- import Paths_haskell_gettext (version)
-
-data Options = Options {
-      outputFile :: String,
-      keywords :: [String],
-      printVersion :: Bool
-    } deriving Show
-
-options :: [OptDescr (Options->Options)]
-options = 
-    [
-     Option ['o'] ["output"] 
-                (ReqArg (\o opts -> opts {outputFile = o}) "FILE") 
-                "write output to specified file",
-     Option ['d'] ["default-domain"] 
-            (ReqArg (\d opts -> opts {outputFile = d ++ ".po"}) "NAME")
-            "use NAME.po instead of messages.po",
-     Option ['k'] ["keyword"] 
-            (ReqArg (\d opts -> opts {keywords = d: keywords opts}) "WORD")
-            "function names, in which searched words are wrapped. Can be used multiple times, for multiple funcitons",
-     Option [] ["version"]
-            (NoArg (\opts -> opts {printVersion = True}))
-            "print version of hgettexts"
-    ]
+import qualified Data.Generics.Uniplate.Data as G
+import qualified Data.Function as F
+import qualified Data.List as L
+import qualified Data.Ord as O
+import qualified Data.Text as T
+import qualified Data.Time as TM
+import qualified Data.Text.IO.Utf8 as Utf8
+import qualified Data.Version as V
+import qualified Language.Haskell.Exts as H
 
 
-defaultOptions = Options "messages.po" ["__", "lprintf"] False
+main :: IO ()
+main = do
+    opts <- parseOptions
+    process opts
 
-parseArgs :: [String] -> IO (Options, [String])
-parseArgs args = 
-    case getOpt Permute options args of
-      (o, n, []) -> return (foldl (flip id) defaultOptions o, n)
-      (_, _, errs) -> ioError (userError (concat errs ++ usageInfo header options))
-    where header = "Usage: hgettext [OPTION] [INPUTFILE] ..."
+process :: Options -> IO ()
+process Options{printVersion = True} =
+        putStrLn $ "hgettext (from haskell-gettext), version " ++
+                     (V.showVersion version)
+process opts
+    | null (inputFiles opts) = do
+        putStrLn "hgettext: missing arguments"
+    | otherwise = do
+        t <- mapM read' (inputFiles opts)
+        pot <- formatPotFile $
+                 map (\(n,c) -> formatMessages n $
+                                  toTranslate (keywords opts) c) t
+        Utf8.writeFile (outputFile opts) (T.pack pot)
+    where
+        read' :: FilePath ->
+                 IO (String, H.ParseResult (H.Module H.SrcSpanInfo))
+        read' "-" = getContents >>= \c -> return ("-", H.parseFileContents c)
+        read' f = H.parseFile f >>= \m -> return (f, m)
 
-
-toTranslate :: [String] -> H.ParseResult (H.Module H.SrcSpanInfo) -> [(H.SrcSpanInfo, String)]
-toTranslate f (H.ParseOk z) = nub [ (loc, s) | H.App _ (H.Var _ (H.UnQual _ (H.Ident _ x))) (H.Lit _ (H.String loc s _)) <- universeBi z, x `elem` f]
-toTranslate _ _ = []
-
--- Create list of messages from a single file
-formatMessages :: String -> [(H.SrcSpanInfo, String)] -> String
-formatMessages path l = concat $ map potEntry $ nubBy ((==) `on` snd) $ sortBy (comparing snd) l
-    where potEntry (l, s) = unlines [
-                             "#: " ++ showSrc l,
-                             "msgid " ++ (show s),
-                             "msgstr \"\"",
-                             ""
-                            ]
-          showSrc l = path ++ ":" ++ show (H.srcSpanStartLine (H.srcInfoSpan l)) ++ ":" ++ show (H.srcSpanStartColumn (H.srcInfoSpan l))
+-------------------------------------------------------------------------------
+-- Write
 
 
 formatPotFile :: [String] -> IO String
-formatPotFile lines = do
-    time <- getZonedTime
-    let timeStr = formatTime defaultTimeLocale "%F %R%z" time
+formatPotFile ls = do
+    time <- TM.getZonedTime
+    let timeStr = TM.formatTime TM.defaultTimeLocale "%F %R%z" time
     let header = formatPotHeader timeStr
-    return $ concat $ header: lines
+    return $ concat (header:ls)
   where
+    formatPotHeader :: String -> String
     formatPotHeader timeStr =
        unlines ["# Translation file",
                 "",
@@ -95,18 +68,40 @@ formatPotFile lines = do
                 "\"Content-Transfer-Encoding: 8bit\\n\"",
                 ""]
 
-process :: Options -> [String] -> IO ()
-process Options{printVersion = True} _ = 
-    putStrLn $ "hgettext, version " ++ (showVersion version)
+-- Create list of messages from a single file.
+formatMessages :: String -> [(H.SrcSpanInfo, String)] -> String
+formatMessages path l =
+        let sorted = L.sortBy (O.comparing snd) l
+            nubbed = L.nubBy ((==) `F.on` snd) sorted
+        in concatMap potEntry nubbed
+    where
+        potEntry :: (H.SrcSpanInfo, String) -> String
+        potEntry (wl, s) = unlines
+                             ["#: " ++ showSrc wl,
+                              "msgid " ++ (showStringC s),
+                              "msgstr \"\"",
+                              ""]
 
-process opts fl = do
-  t <- mapM read' fl
-  pot <- formatPotFile $ map (\(n,c) -> formatMessages n $ toTranslate (keywords opts) c) t
-  writeFile (outputFile opts) pot
-    where read' "-" = getContents >>= \c -> return ("-", H.parseFileContents c)
-          read' f = H.parseFile f >>= \m -> return (f, m)
+        showSrc :: H.SrcSpanInfo -> String
+        showSrc wl = path ++ ":" ++
+                     show (H.srcSpanStartLine (H.srcInfoSpan wl)) ++ ":" ++
+                     show (H.srcSpanStartColumn (H.srcInfoSpan wl))
 
-main = 
-    getArgs >>= parseArgs >>= uncurry process
+toTranslate :: [String] -> H.ParseResult (H.Module H.SrcSpanInfo) ->
+               [(H.SrcSpanInfo, String)]
+toTranslate f (H.ParseOk z) =
+        L.nub [(loc, s) |
+                H.App _ (H.Var _ (H.UnQual _ (H.Ident _ x)))
+                        (H.Lit _ (H.String loc s _)) <- G.universeBi z,
+                x `elem` f]
+toTranslate _ _ = []
 
-
+-- Escape a string in a C-like fashion,
+-- see https://www.ibm.com/docs/en/i/7.4?topic=literals-string
+showStringC :: String -> String
+showStringC s0 = '"' : concatMap showCharC s0 ++ "\""
+    where
+      showCharC '"' = "\\\""
+      showCharC '\\' = "\\\\"
+      showCharC '\n' = "\\n"
+      showCharC c = return c

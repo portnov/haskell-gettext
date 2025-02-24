@@ -1,0 +1,14 @@
+# 1. Print helpful text on missing input.
+$ hgettext
+hgettext: missing arguments
+>= 0
+
+# 2. Print helpful text on missing input even with options.
+$ hgettext --output out.po
+hgettext: missing arguments
+>= 0
+
+# 3. Do not create messages.po on missing input.
+$ hgettext && ls
+> !/messages.po/
+>= 0

@@ -38,8 +38,8 @@ type Headers = [Header]
 pHeader :: Parser Header
 pHeader = do
   name <- (many1 $ alphaNum <|> char '-') <?> "Header name"
-  char ':'
-  many $ oneOf " \t"
+  _ <- char ':'
+  _ <- many $ oneOf " \t"
   value <- many $ noneOf "\r\n"
   return (T.pack name, T.pack value)
 
@@ -51,8 +51,8 @@ pHeaders = pHeader `sepEndBy` newline
 -- NB: for now this function does not use Parsec.
 parseHeaders :: T.Text -> Either String Headers
 parseHeaders t = do
-  let lines = filter (not . T.null) $ T.splitOn "\n" t
-  forM lines $ \line ->
+  let ls = filter (not . T.null) $ T.splitOn "\n" t
+  forM ls $ \line ->
     case T.splitOn ": " line of
       [name, value] -> return (name, value)
       (name:values) -> return (name, T.intercalate ": " values)
@@ -91,7 +91,7 @@ pTernary :: Parser (Expr, Expr)
 pTernary = do
   reservedOp "?"
   true <- pExpr
-  colon
+  _ <- colon
   false <- pExpr
   return (true, false)
 
@@ -100,11 +100,11 @@ pTernary = do
 -- starting from @nplurals=@.
 pPlural :: Parser (Int, Expr)
 pPlural = do
-  symbol "nplurals"
+  _ <- symbol "nplurals"
   reservedOp "="
   n <- natural
-  semi
-  symbol "plural"
+  _ <- semi
+  _ <- symbol "plural"
   reservedOp "="
   expr <- pExpr
   return (n, expr)

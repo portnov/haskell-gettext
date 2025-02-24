@@ -1,0 +1,31 @@
+# 1. Get `output` argument.
+$ hgettext --output out.po Menu.hs && ls
+> /out.po/
+
+# 2. Get `output` argument (short).
+$ hgettext -o out.po Menu.hs && ls
+> /out.po/
+
+# 3. Get `default domain` argument.
+$ hgettext --default-domain dom Menu.hs && ls
+> /dom.po/
+
+# 4. Get `default domain` argument (short).
+$ hgettext -d dom Menu.hs && ls
+> /dom.po/
+
+# 5. Print help.
+$ hgettext --help Menu.hs
+> /Show this help text/
+
+# 6. Read strings (default keyword).
+$ hgettext Menu.hs && cat messages.po
+> /Default/
+
+# 7. Read strings (user defined keyword).
+$ hgettext --keyword __s Menu.hs && cat messages.po
+> /User defined/
+
+# 8. Show version
+$ hgettext --version
+> /(from haskell-gettext)/

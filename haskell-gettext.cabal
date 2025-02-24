@@ -34,12 +34,13 @@ maintainer:          portnov84@rambler.ru
 copyright:           © 2017–2019 Ilya Portnov
 category:            Text
 build-type:          Simple
-extra-doc-files:     README.md
+extra-doc-files:     README.md, NEWS
 extra-source-files:  examples/gmodump.hs
                      examples/gmotest.hs
 
 common shared
-  build-depends:    base == 4.*
+  build-depends:    base == 4.*,
+                    text >= 2.1.2 && < 2.2,
   ghc-options:      -Wall
   default-language: Haskell2010
 
@@ -54,7 +55,6 @@ library
                        containers >=0.5 && < 0.7,
                        mtl >= 2.2.1 && < 2.4,
                        parsec >= 3.1.11 && < 3.2,
-                       text >= 1.2 && < 2.2,
                        time >=1.4 && < 1.13,
                        transformers >=0.3 && < 0.7
   hs-source-dirs:      lib/
@@ -62,9 +62,13 @@ library
 executable hgettext
   import:            shared
   main-is:           Main.hs
+  autogen-modules:   Paths_haskell_gettext
+  other-modules:     Options,
+                     Paths_haskell_gettext
   build-depends:     filepath >= 1.4 && < 1.6,
                      haskell-src-exts >= 1.18 && < 1.24,
-                     old-locale >= 1.0 && < 1.1
+                     old-locale >= 1.0 && < 1.1,
+                     optparse-applicative >= 0.18.1 && < 0.19,
                      time >= 1.5.0 && < 1.13,
                      uniplate >= 1.6.12 && < 1.7,
   hs-source-dirs:    exe/

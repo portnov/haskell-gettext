@@ -77,4 +77,4 @@ eval (If cond true false) n =
 eval (Binary op x y) n =
   evalOp op (eval x n) (eval y n)
 eval (Negate x) n = negate $ eval x n
-
+eval (Not x) n = if eval x n == 0 then 1 else eval x n
