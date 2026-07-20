@@ -1,3 +1,7 @@
-# 1. Update a translation
+# 1. Update a translation.
 $ hgettext -k __s Menu.hs && cat messages.po
 > /First string./
+
+# 2. Translate multiple files.
+$ hgettext Menu.hs Menu2.hs && cat messages.po
+> /Outstring/
